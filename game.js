@@ -2,36 +2,47 @@
 
 window.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("renderCanvas");
-  const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+  const engine = new BABYLON.Engine(canvas, true);
   const scene = new BABYLON.Scene(engine);
 
-  // Camera: Dynamic Orthographic 2D
+  // Disable right-click context menu
+  canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+  // 1. ORTHO 2D CAMERA
   const camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 0, -10), scene);
   camera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
   camera.setTarget(BABYLON.Vector3.Zero());
-  camera.attachControl(canvas, false);
 
-  // Light (required)
+  // 🔒 Disable Babylon's default camera input behavior
+  camera.inputs.clear(); // NO zoom, drag, orbit, rotate, pan — all disabled
+
+  // 2. LIGHT
   new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 
-  // Sprite Manager
-  const spriteManager = new BABYLON.SpriteManager(
+  // 3. BACKGROUND SPRITE (Optional sky, sea, tiles, etc.)
+  const bgManager = new BABYLON.SpriteManager("bg", "assets/bg.png", 1, { width: 1024, height: 768 }, scene);
+  const background = new BABYLON.Sprite("background", bgManager);
+  background.position = new BABYLON.Vector3(0, 0, 1); // Behind player (z > player)
+  background.width = 1024;
+  background.height = 768;
+
+  // 4. PLAYER SPRITE
+  const playerManager = new BABYLON.SpriteManager(
     "playerManager",
     "assets/player.png",
     1,
     { width: GameConfig.SPRITE_SIZE, height: GameConfig.SPRITE_SIZE },
     scene
   );
-  spriteManager.texture.hasAlpha = true;
-  spriteManager.texture.updateSamplingMode(BABYLON.Texture.NEAREST_NEAREST_MIPNEAREST);
+  playerManager.texture.hasAlpha = true;
+  playerManager.texture.updateSamplingMode(BABYLON.Texture.NEAREST_NEAREST_MIPNEAREST);
 
-  // Create player sprite
-  const player = new BABYLON.Sprite("player", spriteManager);
+  const player = new BABYLON.Sprite("player", playerManager);
   player.position = new BABYLON.Vector3(0, 0, 0);
   player.width = GameConfig.SPRITE_SIZE;
   player.height = GameConfig.SPRITE_SIZE;
 
-  // Resize camera based on screen
+  // 5. RESIZE LOGIC
   function resizeCamera() {
     const aspect = canvas.clientWidth / canvas.clientHeight;
     const viewHeight = GameConfig.DESIGN_HEIGHT;
@@ -41,22 +52,41 @@ window.addEventListener("DOMContentLoaded", () => {
     camera.orthoBottom = -viewHeight / 2;
     camera.orthoLeft = -viewWidth / 2;
     camera.orthoRight = viewWidth / 2;
+
+    // Update background scale
+    background.width = viewWidth;
+    background.height = viewHeight;
   }
 
-  // Input handling
+  // 6. INPUT
   const keys = {};
-  window.addEventListener("keydown", (e) => keys[e.key] = true);
-  window.addEventListener("keyup", (e) => keys[e.key] = false);
+  window.addEventListener("keydown", e => keys[e.key] = true);
+  window.addEventListener("keyup", e => keys[e.key] = false);
 
+  // 7. TOUCH AND MOUSE HANDLING
+  canvas.addEventListener("touchstart", handleClick);
+  canvas.addEventListener("mousedown", handleClick);
+
+  function handleClick(e) {
+    // Map screen to world
+    const pickResult = scene.pick(scene.pointerX, scene.pointerY);
+    if (pickResult && pickResult.pickedPoint) {
+      const point = pickResult.pickedPoint;
+      player.position.x = Math.round(point.x);
+      player.position.y = Math.round(point.y);
+    }
+  }
+
+  // 8. MOVEMENT LOOP
   scene.onBeforeRenderObservable.add(() => {
-    // Snap player to integer positions to avoid subpixel artifacts
-    player.position.x = Math.round(player.position.x);
-    player.position.y = Math.round(player.position.y);
-
     if (keys["ArrowUp"] || keys["w"]) player.position.y += GameConfig.PLAYER_SPEED;
     if (keys["ArrowDown"] || keys["s"]) player.position.y -= GameConfig.PLAYER_SPEED;
     if (keys["ArrowLeft"] || keys["a"]) player.position.x -= GameConfig.PLAYER_SPEED;
     if (keys["ArrowRight"] || keys["d"]) player.position.x += GameConfig.PLAYER_SPEED;
+
+    // Snap to pixel
+    player.position.x = Math.round(player.position.x);
+    player.position.y = Math.round(player.position.y);
   });
 
   resizeCamera();

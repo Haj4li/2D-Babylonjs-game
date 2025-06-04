@@ -1,27 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Babylon 2D Game</title>
-  <style>
-    html, body {
-      margin: 0;
-      overflow: hidden;
-    }
-    canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-  </style>
-</head>
-<body>
-  <canvas id="renderCanvas"></canvas>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>2D Babylon Game</title>
+    <style>
+      html, body {
+        margin: 0;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        background: #000;
+      }
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="renderCanvas"></canvas>
 
-  <!-- BabylonJS CDN -->
-  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <!-- Babylon -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
 
-  <!-- Game Logic -->
-  <script src="game.js"></script>
-</body>
+    <!-- Config and Game Logic -->
+    <script src="config.js"></script>
+    <script src="game.js"></script>
+  </body>
 </html>
